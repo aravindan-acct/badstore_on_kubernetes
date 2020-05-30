@@ -11,7 +11,7 @@ resources:
 variables:
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: 'f31d7e23-ad78-4302-9dc1-922e07c873b5'
-  imageRepository: 'newbadstore'
+  imageRepository: 'https://github.com/aravindan-acct/newbadstore.git'
   containerRegistry: 'privregistry01.azurecr.io'
   dockerfilePath: 'https://raw.githubusercontent.com/aravindan-acct/newbadstore/master/Dockerfile'
   tag: '$(Build.BuildId)'
