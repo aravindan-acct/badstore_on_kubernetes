@@ -13,7 +13,7 @@ variables:
   dockerRegistryServiceConnection: 'f31d7e23-ad78-4302-9dc1-922e07c873b5'
   imageRepository: 'newbadstore'
   containerRegistry: 'privregistry01.azurecr.io'
-  dockerfilePath: 'https://github.com/aravindan-acct/newbadstore/blob/master/Dockerfile'
+  dockerfilePath: 'https://raw.githubusercontent.com/aravindan-acct/newbadstore/master/Dockerfile'
   tag: '$(Build.BuildId)'
   
   # Agent VM image name
