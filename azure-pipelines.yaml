@@ -1,0 +1,127 @@
+# Deploy to Azure Kubernetes Service
+# Build and push image to Azure Container Registry; Deploy to Azure Kubernetes Service
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: 'd731729b-d72a-4f55-b2a6-e2db10ab848e'
+  imageRepository: 'selahcloudnewbadstore'
+  containerRegistry: 'privregistry01.azurecr.io'
+  dockerfilePath: '**/Dockerfile'
+  tag: '$(Build.BuildId)'
+  imagePullSecret: 'privregistry011817b2cb-auth'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+  
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+          
+    - upload: manifests
+      artifact: manifests
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: $(vmImageName)
+    environment: 'selahcloudnewbadstore.default'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+              
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                $(Pipeline.Workspace)/manifests/deployment.yml
+                $(Pipeline.Workspace)/manifests/service.yml
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)
+          - task: DownloadSecureFile@1
+            name: kubeconfig # The name with which to reference the secure file's path on the agent, like $(mySecureFile.secureFilePath)
+            inputs:
+              secureFile: config # The file name or GUID of the secure file
+          - task: DownloadSecureFile@1
+            name: wafjson # The name with which to reference the secure file's path on the agent, like $(mySecureFile.secureFilePath)
+            inputs:
+              secureFile: waf.json # The file name or GUID of the secure file
+          - task: DownloadSecureFile@1
+            name: requirements # The name with which to reference the secure file's path on the agent, like $(mySecureFile.secureFilePath)
+            inputs:
+              secureFile: requirements.txt # The file name or GUID of the secure file
+
+          - task: DownloadSecureFile@1
+            name: filetest # The name with which to reference the secure file's path on the agent, like $(mySecureFile.secureFilePath)
+            inputs:
+              secureFile: file_test.py # The file name or GUID of the secure file
+
+          - script: |
+              #! /bin/bash
+              sudo apt-get install -y python3-venv
+              sudo apt-get install python3-setuptools
+              sudo chown root:root $(wafjson.secureFilePath)
+              sudo chmod a+r $(wafjson.secureFilePath)
+              sudo mkdir -p /etc/waf
+              sudo ln -s -t /etc/waf/ $(wafjson.secureFilePath)
+              sudo chown root:root $(kubeconfig.secureFilePath)
+              sudo chmod a+r $(kubeconfig.secureFilePath)
+              sudo mkdir ~/.kube
+              sudo ln -s -t ~/.kube/ $(kubeconfig.secureFilePath)
+              sudo chown root:root $(requirements.secureFilePath)
+              sudo chmod a+r $(requirements.secureFilePath)
+              sudo chown root:root $(filetest.secureFilePath)
+              sudo chmod a+r $(filetest.secureFilePath)
+              ls ~/.kube/
+              sudo /usr/bin/kubectl get service/selahcloudnewbadstore -o json --namespace default > /tmp/kubedeploy.json
+              cd /home/
+              sudo python3 -m venv waf_job
+              cd waf_job
+              pwd
+              echo "test"
+              source bin/activate
+              sudo ln -s -t /home/waf_job/ $(requirements.secureFilePath)
+              sudo pip3 install -r requirements.txt
+              sudo ln -s -t /home/waf_job/ $(filetest.secureFilePath)
+              sudo python3 file_test.py
+
+
+                   
