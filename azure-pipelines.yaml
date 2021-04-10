@@ -53,7 +53,7 @@ stages:
     displayName: Deploy
     pool:
       vmImage: $(vmImageName)
-    environment: 'selahcloudnewbadstore.default'
+    environment: 'aksenv.default'
     strategy:
       runOnce:
         deploy:
