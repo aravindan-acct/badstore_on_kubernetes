@@ -11,13 +11,13 @@ resources:
 variables:
 
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: 'd731729b-d72a-4f55-b2a6-e2db10ab848e'
+  dockerRegistryServiceConnection: '0ea9cc4d-68d1-4632-bab9-99a0e1a44291'
   imageRepository: 'selahcloudnewbadstore'
-  containerRegistry: 'privregistry01.azurecr.io'
+  containerRegistry: 'demogartner.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
-  imagePullSecret: 'privregistry011817b2cb-auth'
-
+  imagePullSecret: 'demogartnerb4da-auth'
+  
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
   
