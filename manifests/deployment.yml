@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: newbadstore 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: newbadstore
+  template:
+    metadata:
+      labels:
+        app: newbadstore 
+    spec:
+      containers:
+        - name: newbadstore 
+          image: demogartner.azurecr.io/newbadstore
+          ports:
+          - containerPort: 8000
